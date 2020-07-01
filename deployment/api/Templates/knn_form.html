@@ -1,0 +1,26 @@
+
+<html>
+<head> 
+    <title>KNN</title>
+</head>
+<form action = "/knn_form/" method = "POST">
+    {%csrf_token%}
+    <h1>Form</h1>
+    <input type='text' name='no_of_out_transactions' placeholder="no_of_out_transactions" required ><br><br>
+    <input type='text' name= 'tot_ether_sent' placeholder="tot_ether_sent" required ><br><br>
+    <input type='text' name='no_of_in_transactions' placeholder="no_of_in_transactions" required ><br><br> 
+    <input type='text' name= 'tot_ether_recieved' placeholder="tot_ether_recieved" required ><br><br>
+    <input type='text' name= 'monthly_out_txn' placeholder="monthly_out_txn" required ><br><br>
+    <input type='text' name='monthly_in_txn' placeholder="monthly_in_txn" required ><br><br>
+    <input type='text' name= 'active_months' placeholder="active_months" required ><br><br>
+    <input type='text' name= 'eth_balance' placeholder="eth_balance" required ><br><br>
+    <input type='text' name= 'time_bw_out_txn' placeholder="time_bw_out_txn" required ><br><br>
+    <input type='text' name='time_bw_in_txn' placeholder="time_bw_in_txn" required ><br><br>
+    <input type='text' name= 'tot_token_value_recieved' placeholder="tot_token_value_recieved" required ><br><br>
+    <input type='text' name= 'tot_token_value_sent' placeholder="tot_token_value_sent" required ><br><br>
+    <input type='text' name='monthly_ether_sent' placeholder="monthly_ether_sent" required ><br><br>
+    <input type='text' name= 'monthly_ether_recieved' placeholder="monthly_ether_recieved" required ><br><br>
+    <button type="submit" class="btn btn-primary">Submit</button>
+
+</form>
+</html>

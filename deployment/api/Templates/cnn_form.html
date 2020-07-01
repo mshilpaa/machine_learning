@@ -1,0 +1,18 @@
+
+<html>
+<head> 
+    <title>Mask-Depth Prediction-Upload Images</title>
+</head>
+<form action = "/cnn_form/" enctype="multipart/form-data" method = "POST">
+    {%csrf_token%}
+    <h1>Upload Images</h1>
+
+        <p>Upload Foreground Image</p>
+        <input  type="file" name="fgbg">
+	
+        <p>Upload Background Image</p>
+        <input  type="file" name="bg">
+	
+	<button type="submit">Submit</button>
+</form>
+</html>

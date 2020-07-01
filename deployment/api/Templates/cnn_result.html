@@ -1,0 +1,21 @@
+
+<html>
+<head> 
+    <title>Mask-Depth</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+        function call_counter() {
+            import os
+            for i in os.path.listdir('../media/images'):
+            	os.remove(i)
+            print('button clicked')
+            window.open('../cnn_form');
+        }
+    </script>
+</head>
+<img src='../{{fgbg_path}}' alt='mask'>
+<img src='../{{bg_path}}' alt='depth'>
+<img src='../{{mask_path}}' alt='mask'>
+<img src='../{{depth_path}}' alt='depth'>
+<button onclick="call_counter();">Refresh</button>
+</html>
