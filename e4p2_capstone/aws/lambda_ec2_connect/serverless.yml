@@ -1,0 +1,61 @@
+service: lambda-ec2-connect
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  region: ap-south-1
+  timeout: 60
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - ec2:Start*
+        - ec2:Stop*
+        - ec2:DescribeInstances
+      Resource: "*"
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    zip: true
+    slim: true
+    strip: false
+    noDeploy:
+      - docutils
+      - jmespath
+      - pip
+      - python-dateutil
+      - setuptools
+      - six
+      - tensorboard
+    useStaticCache: true
+    useDownloadCache: true
+    cacheLocation: "./cache"
+
+package:
+  individually: false
+  exclude:
+    - package.json
+    - package-lock.json
+    - node_modules/**
+    - cache/**
+    - test/**
+    - __pycache__/**
+    - .pytest_cache/**
+    - model/**
+
+functions:
+  lambda_ec2_connect:
+    handler: handler.lambda_ec2_connect
+    memorySize: 3008
+    timeout: 30
+    events:
+      - http:
+          path: lambda_ec2_connect
+          method: post
+          cors: true
+
+
+
+plugins:
+  - serverless-python-requirements

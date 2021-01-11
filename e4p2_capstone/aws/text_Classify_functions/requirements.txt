@@ -1,0 +1,4 @@
+requests_toolbelt
+pandas
+numpy==1.18.5
+Pillow==7.2.0
