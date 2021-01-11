@@ -10,39 +10,45 @@ from torchtext import data
 import torch.nn as nn
 import torch.nn.functional as F
 import sys
-
+import shutil
 from s3_upload import upload_to_s3
 
 ACCESS_KEY = ''
 SECRET_KEY = ''
-BUCKET_NAME = 'eva4p2-capstone' 
+BUCKET_NAME = ''
 USERID = sys.argv[1]
-CLASSES = sys.argv[2]
+CLASSES = int(sys.argv[2])
 S3_FILE_NAME = f'{USERID}/text_classify/dataset.csv'
 FOLDER_NAME = "data_folder"
 MODEL_SAVE_PATH = f'{FOLDER_NAME}/saved_weights.pt'
 S3_MODEL_SAVE = f'{USERID}/text_classify/saved_weights.pt'
-TOKENIZER_PATH = f'{FOLDER_NAME}/tokenizer.pkl'
-S3_TOKENIZER_PATH = f'{USERID}/text_classify/tokenizer.pkl'
+TOKENIZER_PATH = f'{FOLDER_NAME}/tokenizer.pickle'
+S3_TOKENIZER_PATH = f'{USERID}/text_classify/tokenizer.pickle'
+S3_MODEL_TXT_FILE_PATH = f'{USERID}/text_classify/text_model_stats.txt'
+LOCAL_MODEL_TXT_FILE_PATH = f'text_model_stats.txt'
 
 # Manual Seed
 SEED = 43
 torch.manual_seed(SEED)
-os.mkdir(FOLDER_NAME)
+try:
+  os.mkdir(FOLDER_NAME)
+except:
+  shutil.rmtree(FOLDER_NAME)
+  os.mkdir(FOLDER_NAME)
 # Download dataset
 s3 = boto3.client('s3', aws_access_key_id= ACCESS_KEY,
                   aws_secret_access_key= SECRET_KEY)
 obj = s3.get_object(Bucket=BUCKET_NAME, Key=S3_FILE_NAME)
-df = pd.read_csv(io.BytesIO(obj['Body'].read()))
+df = pd.read_csv(io.BytesIO(obj['Body'].read()),names=['tweets','labels'])
 # df = pd.read_csv('/content/tweets.csv')
-print(df.shape)
-print(df.labels.value_counts())
+#print(df.shape)
+#print(df.labels.value_counts())
 
 # Defining Fields
 
 Tweet = data.Field(sequential = True, tokenize = 'spacy', batch_first =True, include_lengths=True)
 Label = data.LabelField(tokenize ='spacy', is_target=True, batch_first =True, sequential =False)
-col = df.columns 
+col = df.columns
 fields = [(col[0], Tweet),(col[1],Label)]
 example = [data.Example.fromlist([df.tweets[i],df.labels[i]], fields) for i in range(df.shape[0])]
 twitterDataset = data.Dataset(example, fields)
@@ -60,6 +66,7 @@ Label.build_vocab(train)
 # print('Labels : ', Label.vocab.stoi)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 train_iterator, valid_iterator = data.BucketIterator.splits((train, valid), batch_size = 32,
                                                             sort_key = lambda x: len(x.tweets),
                                                             sort_within_batch=True, device = device)
@@ -120,7 +127,7 @@ dropout = 0.2
 
 # Instantiate the model
 model = classifier(size_of_vocab, embedding_dim, num_hidden_nodes, num_output_nodes, num_layers, dropout = dropout)
-print(model)
+#print(model)
 
 
 # No. of trianable parameters
@@ -128,7 +135,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-print(f'The model has {count_parameters(model):,} trainable parameters')
+#print(f'The model has {count_parameters(model):,} trainable parameters')
 
 import torch.optim as optim
 
@@ -231,15 +238,23 @@ for epoch in range(N_EPOCHS):
     # save the best model
     if valid_loss < best_valid_loss:
         best_valid_loss = valid_loss
-        seq = torch.zeros((1,5), dtype=torch.long).to('cpu') 
+        seq = torch.zeros((1,5), dtype=torch.long).to('cpu')
+        model.to('cpu')
         traced_model = torch.jit.trace(model, (seq,torch.tensor([5])))
         traced_model.save(MODEL_SAVE_PATH)
+        model.to(device)
 
-    # print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
-    # print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}% \n')
+    #print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
+    #print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc * 100:.2f}% \n')
 
-print(f'{train_acc * 100:.2f} {valid_acc * 100:.2f}')
+print(f'Train Acc:{train_acc * 100:.2f} ')
+print(f'Test Acc:{valid_acc * 100:.2f}')
 upload_to_s3(MODEL_SAVE_PATH,BUCKET_NAME,S3_MODEL_SAVE ,ACCESS_KEY,SECRET_KEY)
 upload_to_s3(TOKENIZER_PATH,BUCKET_NAME,S3_TOKENIZER_PATH,ACCESS_KEY,SECRET_KEY)
 import shutil
 shutil.rmtree(FOLDER_NAME)
+f = open(LOCAL_MODEL_TXT_FILE_PATH,'a')
+f.write(f"{valid_acc*100:.2f} {train_acc * 100:.2f} \n")
+f.close()
+uploading = upload_to_s3(LOCAL_MODEL_TXT_FILE_PATH, BUCKET_NAME, S3_MODEL_TXT_FILE_PATH, ACCESS_KEY, SECRET_KEY)
+os.remove(LOCAL_MODEL_TXT_FILE_PATH)
