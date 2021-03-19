@@ -3,7 +3,7 @@ asgiref==3.2.7
 cycler==0.10.0
 decorator==4.4.2
 Django==3.0.5
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 future==0.18.2
 imageio==2.8.0
 imgaug==0.2.6
